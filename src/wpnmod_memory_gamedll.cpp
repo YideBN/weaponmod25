@@ -646,8 +646,8 @@ void CMemory::Parse_WorldPrecache(void)
 // 6697895F       | 68 EC3F9866                  | push hl.66983FEC                        | 66983FEC:"common/null.wav"
 
 		char			string[] = "common/null.wav";
-		char			mask[] = "xxxxx";
-		unsigned char	pattern[] = "\x68\x00\x00\x00\x00";
+		char			mask[] = "x????x????xxxxxxx";
+		unsigned char	pattern[] = "\xE8\x00\x00\x00\x00\xE8\x00\x00\x00\x00\x68\x00\x00\x00\x00\xFF\x15";
 
 		pCurrent = FindStringInDLL(m_start_gamedll, m_end_gamedll, string);
 		if (!pCurrent)
@@ -656,20 +656,17 @@ void CMemory::Parse_WorldPrecache(void)
 			m_bSuccess = false;
 			return;
 		}
-		*(size_t*)(pattern + 1) = pCurrent;
-		size_t pPush = FindAdressInDLL(m_start_gamedll, m_end_gamedll, pattern, mask);
-
-		if (!pPush || pPush < 5)
+		*(size_t*)(pattern + 11) = pCurrent;
+		size_t pCall = FindAdressInDLL(m_start_gamedll, m_end_gamedll, pattern, mask);
+		if (!pCall)
 		{
-			WPNMOD_LOG("   Error: \"%s\" not found [1]\n", funcname);
-			m_bSuccess = false;
-			return;
+		    WPNMOD_LOG("   Error: \"%s\" not found [2]\n", funcname);
+		    m_bSuccess = false;
+		    return;
 		}
-		size_t pCall = pPush - 10;
-
 		if (*(unsigned char*)pCall != 0xE8)
 		{
-			WPNMOD_LOG("   Error: \"%s\" not found [3] (pCall=%p)\n", funcname, (void*)pCall);
+			WPNMOD_LOG("   Error: \"%s\" not found [3]\n", funcname);
 			m_bSuccess = false;
 			return;
 		}
