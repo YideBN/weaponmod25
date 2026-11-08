@@ -80,7 +80,7 @@ void CMemory::Parse_ClearMultiDamage(void)
 		return;
 	}
 
-	pAdress = ParseFunc(pAdress, pAdress + 300, funcname, pattern, mask, BytesOffset);
+	pAdress = ParseFunc(pAdress, pAdress + 450, funcname, pattern, mask, BytesOffset);
 
 	if (!pAdress)
 	{
@@ -128,7 +128,7 @@ void CMemory::Parse_ApplyMultiDamage(void)
 	pAdress = (size_t)FindAdressInDLL(&m_GameDllModule, "?SuperBounceTouch@CSqueakGrenade@@AAEXPAVCBaseEntity@@@Z");
 
 	char				mask[] = "xxx????x";
-	unsigned char		pattern[] = "\x50\x50\xE8\x00\x00\x00\x00\x8B";
+	unsigned char		pattern[] = "\x51\x50\xE8\x00\x00\x00\x00\x8B";
 	size_t				BytesOffset = 3;
 
 	if (!pAdress)
@@ -657,7 +657,7 @@ void CMemory::Parse_WorldPrecache(void)
 			return;
 		}
 		*(size_t*)(pattern + 1) = pCurrent;
-		size_t pPush = FindAdressInDLL(m_start_gamedll, m_end_gamedll, pushpat, pushmask);
+		size_t pPush = FindAdressInDLL(m_start_gamedll, m_end_gamedll, pattern, mask);
 
 		if (!pPush || pPush < 5)
 		{
