@@ -816,7 +816,7 @@ void CMemory::Parse_InfoArrays(void)
 	else
 	{
 		size_t start = pAdress;
-		size_t end = pAdress + 25;
+		size_t end = pAdress + 32;
 
 		pAdress = FindAdressInDLL(start, end, (unsigned char*)"\x6A\x00\x68", "xxx");
 
