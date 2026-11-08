@@ -641,8 +641,8 @@ void CMemory::Parse_WorldPrecache(void)
 // 66978945       | 8986 98010000                | mov dword ptr ds:[esi+198],eax          |
 // 6697894B       | E8 4067FEFF                  | call hl.6695F090                        |
 // 66978950       | E8 0B73FEFF                  | call hl.6695FC60                        |
-// 66978955       | E8 86F5FFFF                  | call hl.66977EE0                        |
-// 6697895A       | E8 81D2F7FF                  | call hl.668F5BE0                        | ----------- W_Precache
+// 66978955       | E8 86F5FFFF                  | call hl.66977EE0                        | ----------- W_Precache
+// 6697895A       | E8 81D2F7FF                  | call hl.668F5BE0                        |
 // 6697895F       | 68 EC3F9866                  | push hl.66983FEC                        | 66983FEC:"common/null.wav"
 
 		char			string[] = "common/null.wav";
@@ -665,11 +665,11 @@ void CMemory::Parse_WorldPrecache(void)
 			m_bSuccess = false;
 			return;
 		}
-		size_t pCall = pPush - 5;
+		size_t pCall = pPush - 10;
 
 		if (*(unsigned char*)pCall != 0xE8)
 		{
-			WPNMOD_LOG("   Error: \"%s\" not found [4]\n", funcname);
+			WPNMOD_LOG("   Error: \"%s\" not found [3] (pCall=%p)\n", funcname, (void*)pCall);
 			m_bSuccess = false;
 			return;
 		}
