@@ -608,72 +608,73 @@ void CMemory::Parse_WorldPrecache(void)
 		size_t pCurrent = NULL;
 		size_t pCandidate = NULL;
 
-		// 85 C0				test	eax, eax
-		// 75 10				jnz		short loc_100EC92C
-		// 68 0C D4 14 10		push	offset aCouldNotCreate; "**COULD NOT CREATE SOUNDENT**\n"
-		// 6A 01				push	1; _DWORD
-		// FF 15 DC 15 15 10	call	dword_101515DC
-		// 83 C4 08				add		esp, 8
-		// E8 7F 03 00 00		call	sub_100ECCB0
-		// E8 6A FB FD FF		call	sub_100CC4A0
-		// E8 A5 01 FE FF		call	sub_100CCAE0
-		// E8 70 D5 FF FF		call	sub_100E9EB0
-		// E8 3B F6 F2 FF		call	W_Precache
+// 669788D7       | 68 BC0C9A66                  | push hl.669A0CBC                        | 669A0CBC:"**COULD NOT CREATE SOUNDENT**\n"
+// 669788DC       | 6A 01                        | push 1                                  |
+// 669788DE       | FF15 DC759B66                | call dword ptr ds:[669B75DC]            |
+// 669788E4       | 83C4 08                      | add esp,8                               |
+// 669788E7       | A1 64779B66                  | mov eax,dword ptr ds:[669B7764]         |
+// 669788EC       | BF 5C0C9A66                  | mov edi,hl.669A0C5C                     | 669A0C5C:"bodyque"
+// 669788F1       | 2BB8 98000000                | sub edi,dword ptr ds:[eax+98]           |
+// 669788F7       | 57                           | push edi                                |
+// 669788F8       | FF15 44759B66                | call dword ptr ds:[669B7544]            |
+// 669788FE       | 83C4 04                      | add esp,4                               |
+// 66978901       | A3 F8999C66                  | mov dword ptr ds:[669C99F8],eax         |
+// 66978906       | 85C0                         | test eax,eax                            |
+// 66978908       | 75 04                        | jne hl.6697890E                         |
+// 6697890A       | 33F6                         | xor esi,esi                             |
+// 6697890C       | EB 06                        | jmp hl.66978914                         |
+// 6697890E       | 8DB0 80000000                | lea esi,dword ptr ds:[eax+80]           |
+// 66978914       | BB 03000000                  | mov ebx,3                               |
+// 66978919       | 0F1F80 00000000              | nop dword ptr ds:[eax],eax              |
+// 66978920       | 57                           | push edi                                |
+// 66978921       | FF15 44759B66                | call dword ptr ds:[669B7544]            |
+// 66978927       | 8986 98010000                | mov dword ptr ds:[esi+198],eax          |
+// 6697892D       | 83C4 04                      | add esp,4                               |
+// 66978930       | 8BF0                         | mov esi,eax                             |
+// 66978932       | 83E8 80                      | sub eax,FFFFFF80                        |
+// 66978935       | F7DE                         | neg esi                                 |
+// 66978937       | 1BF6                         | sbb esi,esi                             |
+// 66978939       | 23F0                         | and esi,eax                             |
+// 6697893B       | 83EB 01                      | sub ebx,1                               |
+// 6697893E       | 75 E0                        | jne hl.66978920                         |
+// 66978940       | A1 F8999C66                  | mov eax,dword ptr ds:[669C99F8]         |
+// 66978945       | 8986 98010000                | mov dword ptr ds:[esi+198],eax          |
+// 6697894B       | E8 4067FEFF                  | call hl.6695F090                        |
+// 66978950       | E8 0B73FEFF                  | call hl.6695FC60                        |
+// 66978955       | E8 86F5FFFF                  | call hl.66977EE0                        |
+// 6697895A       | E8 81D2F7FF                  | call hl.668F5BE0                        | ----------- W_Precache
+// 6697895F       | 68 EC3F9866                  | push hl.66983FEC                        | 66983FEC:"common/null.wav"
 
-		char			string[] = "**COULD NOT CREATE SOUNDENT**\n";
-		char			mask[] = "xxxxxx";
-		unsigned char	pattern[] = "\x10\x68\x00\x00\x00\x00";
+		char			string[] = "common/null.wav";
+		char			mask[] = "xxxxx";
+		unsigned char	pattern[] = "\x68\x00\x00\x00\x00";
 
 		pCurrent = FindStringInDLL(m_start_gamedll, m_end_gamedll, string);
-
-		while (pCurrent)
-		{
-			*(size_t*)(pattern + 2) = (size_t)pCurrent;
-
-			if ((pCandidate = FindAdressInDLL(m_start_gamedll, m_end_gamedll, pattern, mask)))
-			{
-				count++;
-				pAdress = pCandidate;
-			}
-
-			pCurrent = FindStringInDLL(pCurrent + 1, m_end_gamedll, string);
-		}
-
-		if (!count)
+		if (!pCurrent)
 		{
 			WPNMOD_LOG("   Error: \"%s\" not found [0]\n", funcname);
 			m_bSuccess = false;
 			return;
 		}
-		else if (count > 1)
+		*(size_t*)(pattern + 1) = pCurrent;
+		size_t pPush = FindAdressInDLL(m_start_gamedll, m_end_gamedll, pushpat, pushmask);
+
+		if (!pPush || pPush < 5)
 		{
 			WPNMOD_LOG("   Error: \"%s\" not found [1]\n", funcname);
 			m_bSuccess = false;
 			return;
 		}
+		size_t pCall = pPush - 5;
 
-		count = 0;
-
-		size_t end = pAdress + 50;
-		unsigned char opcode[] = "\xE8";
-
-		pCurrent = FindAdressInDLL(pAdress + 4, end, opcode, "x");
-
-		// Find fourth call.
-		while (pCurrent && count != 4)
+		if (*(unsigned char*)pCall != 0xE8)
 		{
-			count++;
-			pAdress = pCurrent;
-			pCurrent = FindAdressInDLL(pCurrent + 1, end, opcode, "x");
-		}
-
-		if (count != 4)
-		{
-			WPNMOD_LOG("   Error: \"%s\" not found [2]\n", funcname);
+			WPNMOD_LOG("   Error: \"%s\" not found [4]\n", funcname);
 			m_bSuccess = false;
 			return;
 		}
 
+		pAdress = pCall;
 		pAdress += 1;
 		pAdress = *(size_t*)pAdress + pAdress + 4;
 	}
